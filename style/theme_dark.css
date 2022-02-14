@@ -1,0 +1,89 @@
+.syntax_string {
+  color: #ba2121;
+}
+
+.syntax_comment {
+  color: #777777;
+}
+.syntax {
+  display: block;
+  padding: 0.5em;
+  background: #222222;
+  color: #f0f0f0;
+}
+.syntax_delimeter .syntax_identifier {
+  color: #f0f0f0;
+}
+.syntax_keyword {
+  color: #ff6a38;
+}
+
+.syntax_function, .syntax_list, .syntax_title {
+  color:  #63a5a5;;
+}
+.syntax_function{
+color:   #15a2c1;
+}
+/* .syntax_operator{
+
+}
+.syntax_delimeter{
+  
+} */
+
+.syntax_string,
+.syntax_tag .syntax_value,
+.syntax_argument,
+.syntax_attribute {
+  color:  #63a5a5;;
+}
+
+.syntax_subst {
+  color: #daefa3;
+}
+
+.syntax_regexp {
+  color: #e9c062;
+}
+
+.syntax_params,
+.syntax_variable,
+.syntax_attribute {
+  color: #9c7ddb;
+}
+
+.css .syntax_tag,
+.syntax_rules .syntax_property,
+.syntax_pseudo,
+.tex .syntax_special {
+  color: #ff6a38;
+}
+
+.css .syntax_class {
+  color: #9c7ddb;
+}
+
+.css .syntax_id {
+  color: #8b98ab;
+}
+
+.syntax_annotation {
+  color: #9b859d;
+}
+.syntax_number {
+  color: #dd7b3b;
+}
+.syntax_hexcolor,
+.css .syntax_value .syntax_number {
+  color: #dd7b3b;
+}
+
+.syntax_addition {
+  background-color: #253b22;
+  color: #f8f8f8;
+}
+
+.syntax_deletion {
+  background-color: #420e09;
+  color: #f8f8f8;
+}

@@ -1,0 +1,15 @@
+{
+  "name": "source_code_highlight",
+  "version": "1.0.0",
+  "description": " Highlight source code  and generates html",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha __test__/*/*.js"
+  },
+  "type": "module",
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "mocha": "^9.2.0"
+  }
+}
