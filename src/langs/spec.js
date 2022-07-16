@@ -1,4 +1,33 @@
-import { concatRegex } from "../utils.js";
+
+/**
+ * Grammar
+ * |Comment
+ *    -single line
+ *    -multiline
+ * |Constant 
+ *    -number 
+ *    -character escape
+ * |Keyword
+ *    -control
+ * |String
+ *    -single quote
+ *    -double quote
+ *    -triple quote
+ * |Entity
+ *    -name
+ *      -tag
+ *      -type
+ *    -attribute-name
+ * 
+ */
+
+
+
+
+
+
+
+
 /**
  * Rules that matches portion a document for a given language
  * begin, end and pattern is specified expression
@@ -7,12 +36,15 @@ import { concatRegex } from "../utils.js";
 /**
  * @typedef {Object} PatternObject
  * @property {string} cssClass
- * @property {string} type
+ * @property {string} include
  * @property {RegExp} match
  * @property {RegExp} end
  * @property {RegExp} begin
  * @property {number} priority
  * @property {Array<PatternObject>} patterns
+ * @property {PatternObject} endCaptures
+ * @property {PatternObject} beginCaptures
+ * 
  * */
 
 export class Pattern {
@@ -90,6 +122,9 @@ export class Pattern {
   }
 }
 export class Spec {
+  SPECIAL_CHARACTER = [
+ 
+  ]
   /**
    * @param {PatternObject} rule
    */

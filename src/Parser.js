@@ -67,23 +67,24 @@ export class ParserTree {
    * @param {string} string
    * @param {Spec} languageSpecification
    */
-  parse(string, languageSpecification) {
+  parse(string, spec) {
     this._root = new Node({
       cssClass: "syntax",
       value: "",
     });
-    this.spec = languageSpecification;
+    this.spec = spec;
+    this.grammar = spec.grammar;
     this._string = string;
-    this._parse(spec.pattern, this._root);
+    this._parse(spec.grammar.patterns, this._root);
   }
   _parse(pattern, node) {
     do {
-      this._lookahead = this.getNextToken(pattern, node);
-  
+      let string = this._string.slice(this._cursor);
+      this._lookahead = this.getNextToken(pattern, string);
       if (!this._lookahead) {
         return;
       }
-      if (this._lookahead.pattern.isExpression) {
+      if (this._lookahead.pattern.patterns) {
         this.Expression(node);
       } else {
         this.Primary(node);
@@ -94,25 +95,30 @@ export class ParserTree {
    * @param {Array.<Pattern>} patterns
    * @returns {Lookahead}
    */
-  getNextToken(patterns) {
+  getNextToken(patterns, string) {
+    string = string || this._string.slice(this._cursor);
     let match;
-    for (const p of patterns) {
-      if (p.isExpression) {
-        match = this._match(new RegExp(`^(${p.begin})`));
+    for (let p of patterns) {
+      if (p.include) {
+        p = this.grammar.repository[p.include];
+      }
+      if (p.begin) {
+        match = this._match(new RegExp(`^(${p.begin})`), string);
         if (match) {
           return { match: match, pattern: p };
         }
         continue;
-      } else {
-        match = this._match(new RegExp(`^(${p.match})`));
+      }
+      
+      else {
+        match = this._match(new RegExp(`^(${p.match})`), string);
         if (match) {
           return { match: match, pattern: p };
         }
       }
     }
   }
-  _match(regex) {
-    let string = this._string.slice(this._cursor);
+  _match(regex, string) {
     return regex.exec(string);
   }
   __eat(token, node) {
@@ -136,34 +142,54 @@ export class ParserTree {
    */
 
   Expression(node) {
-    const start = this._lookahead.match[0];
-    const childNode = new Node({
-      value: "",
-      cssClass: this._lookahead.pattern.cssClass,
-    });
     let pattern = this._lookahead.pattern;
-    const endRe = new RegExp(this._lookahead.pattern.end, "s");
-    const token = endRe.exec(this._string.slice(this._cursor),"------------");
-    let endtoken = token ? token[0] : "";
+    const match = this._lookahead.match;
+
+    const childNode = new Node({});
     node.addChild(childNode);
-    this.__eat(
-      {
-        value: start,
-        cssClass: this._lookahead.pattern.cssClass,
-      },
-      childNode
-    );
+    if (pattern.beginCaptures) {
+      if (match.groups) {
+        for (const key in match.groups) {
+          if (match.groups[key]) {
+            this.__eat(
+              {
+                value: match.groups[key],
+                cssClass: pattern.beginCaptures[key].cssClass,
+              },
+              childNode
+            );
+          }
+        }
+      } else {
+        let firstCapture = Object.keys(pattern.beginCaptures)[0];
+        this.__eat(
+          {
+            value: match[0],
+            cssClass: pattern.beginCaptures[firstCapture].cssClass,
+          },
+          childNode
+        );
+      }
+    } else {
+      this.__eat(
+        {
+          value: match[0],
+        },
+        childNode
+      );
+    }
+
+    const endTokenRe = new RegExp(pattern.end, "s");
+    const endMatch = endTokenRe.exec(this._string.slice(this._cursor));
+    let endtoken = endMatch ? endMatch[0] : "";
+
     this._lookahead = this.getNextToken(pattern.patterns);
-    console.log(endtoken,"----------end token",this._lookahead.match[0])
     while (
       this._lookahead &&
       this._lookahead.match[0] &&
       this._lookahead.match[0] !== endtoken
     ) {
-      console.log(endtoken,"----------end token",this._lookahead.match[0])
-
-      // console.log(this._lookahead);
-      if (this._lookahead.pattern.isExpression) {
+      if (this._lookahead.pattern.patterns) {
         this.Expression(childNode);
       } else {
         this.__eat(
@@ -176,14 +202,39 @@ export class ParserTree {
       }
       this._lookahead = this.getNextToken(pattern.patterns);
     }
-    let endValue = this._match(new RegExp(`^.*?(${pattern.end})`));
-    this.__eat(
-      {
-        value: endValue ? endValue[0] : "",
-        cssClass: "this._lookahead.pattern.cssClass",
-      },
-      childNode
-    );
+
+    if (pattern.endCaptures) {
+      if (endMatch.groups) {
+        for (const key in endMatch.groups) {
+          if (endMatch.groups[key]) {
+            this.__eat(
+              {
+                value: endMatch.groups[key],
+                cssClass: pattern.endCaptures[key].cssClass,
+              },
+              childNode
+            );
+          }
+        }
+      } else {
+        let firstCapture = Object.keys(pattern.endCaptures)[0];
+        this.__eat(
+          {
+            value: endMatch[0],
+            cssClass: pattern.endCaptures[firstCapture].cssClass,
+          },
+          childNode
+        );
+      }
+    } else {
+      this.__eat(
+        {
+          value: endMatch[0],
+        },
+        childNode
+      );
+    }
+
     this._lookahead = this.getNextToken(pattern.patterns);
   }
   /**
@@ -220,26 +271,39 @@ export class ParserTree {
 
 let p = new ParserTree();
 const spec = new Python();
+// console.log(spec.grammar);
+
 // console.log(spec.Specs);
 // p.parse(``, spec);
+// p.parse(
+//   `#!/usr/bin/env python
+// import os
+// import sys
+
+// if __name__ == "__main__":
+// a=100*20
+// os.environ.setdefault("DJANGO_SETTINGS_MODULE", "gettingstarted.settings")
+
+// from django.core.management import execute_from_command_line
+
+// execute_from_command_line(sys.argv)
+// @func(10,arg)
+// def helloWorld(arg1,arg2) :\n 10
+// x *= 1100;
+// ''' multiline string s1 '''
+// ''' multiline \n string s2 '''
+
+// `,
+//   spec
+// );
+
 p.parse(
-  `#!/usr/bin/env python
-import os
-import sys
-
-if __name__ == "__main__":
-a=100*20
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "gettingstarted.settings")
-
-from django.core.management import execute_from_command_line
-
-execute_from_command_line(sys.argv)
-@func(10,arg)
-def helloWorld(arg1,arg2) :\n 10
-x *= 1100;
-''' multiline string s1 '''
-''' multiline \n string s2 '''
-
+  `
+#program
+@func (a=100,b=20)
+def hellow():
+  a = 10
 `,
   spec
 );
+console.log(JSON.stringify(p._root, false, 2));
